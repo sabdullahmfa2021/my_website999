@@ -1,7 +1,7 @@
 # Site settings
 baseURL = "https://salmanabdullah.netlify.app"
 languageCode = "en-us"
-title = "Forty"
+title = "Salman Abdullah"
 theme = "forty"
 
 # Enter your tracking code to enable Google Analytics
@@ -20,7 +20,7 @@ disqusShortname = ""
 
   # Provide your metadata here.
   name = "Salman Abdullah"
-  description = "Your description"
+  description = "MFA 2021"
 
   # Link custom assets relative to /static
   custom_css = []
@@ -92,26 +92,26 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Salman"
-      subtitle = "Ipsum Dolor Sit Amet"
+      title = "IMDB Ratings"
+      subtitle = "Ratings and directors"
       image = "pic01.jpg"
       url = "blogs/aliquam"
 
     [[params.tiles.showcase]]
-      title = "Tempus"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic02.jpg"
+      title = "AirBnB"
+      subtitle = "A look inside Mexico City trends"
+      image = "logo.jpg"
       url = "blogs/tempus"
 
     [[params.tiles.showcase]]
-      title = "Magna"
-      subtitle = "Lorem Etiam Nullam"
+      title = "M&A Transactions"
+      subtitle = "Merger arbitrage hedge fund strategies"
       image = "pic03.jpg"
       url = "blogs/magna"
 
     [[params.tiles.showcase]]
-      title = "Ipsum"
-      subtitle = "Nisl Sed Aliquam"
+      title = "US Election Data"
+      subtitle = "Trump vs. Clinton in the 2016 Presidential Election"
       image = "pic04.jpg"
       url = "blogs/ipsum"
 

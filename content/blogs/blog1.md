@@ -7,7 +7,7 @@ description: ""
 draft: false
 image: pic10.jpg
 keywords: ""
-slug: ipsum
+slug: US Elections
 title: U.S. Elections
 ---
 
