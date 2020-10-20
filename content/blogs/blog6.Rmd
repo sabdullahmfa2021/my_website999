@@ -8,7 +8,7 @@ description: "Ratings and directors"
 draft: false
 image: pic04.jpg
 keywords: ""
-slug: IMDBcode
+slug: blog6
 title: IMDB Ratings
 ---
 
