@@ -1,0 +1,137 @@
+
+---
+categories:
+- ""
+- ""
+date: "2017-10-31T21:28:43-05:00"
+description: ""
+draft: false
+image: pic10.jpg
+keywords: ""
+slug: blog1
+title: U.S. Elections
+---
+
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(fivethirtyeight)
+library(here)
+library(skimr)
+library(janitor)
+library(vroom)
+library(tidyquant)
+library(rvest)    # scrape websites
+library(purrr)  
+library(lubridate) #to handle dates
+```
+
+
+
+```{r, echo=FALSE}
+# Make sure you use vroom() as it is significantly faster than read.csv()
+CA_contributors_2016 <- vroom::vroom(here::here("data","CA_contributors_2016.csv"))
+
+zipcode <- vroom("http://www.uszipcodelist.com/zip_code_database.csv")
+
+library(tidytext)
+
+cleaned_state_data <- zipcode %>%
+  select(zip, primary_city) %>%
+  mutate_at("zip", as.numeric) # Make sure zip are numeric values
+
+Contribution_plot <- left_join(CA_contributors_2016, cleaned_state_data, by = c("zip" = "zip")) %>%
+  select(cand_nm, contb_receipt_amt, zip, primary_city) %>%
+  filter(cand_nm %in% c("Trump, Donald J.", "Clinton, Hillary Rodham")) %>% # filter for zip codes where DT OR HC received contributions
+  group_by(primary_city, cand_nm) %>%
+  summarise(total_in_primary_city = sum(contb_receipt_amt)) %>%
+  arrange(desc(total_in_primary_city)) %>%
+  ungroup %>%
+  group_by(cand_nm) %>%
+  slice_head(n = 10) 
+
+# Create column plot where we reorder cities for both candidates according to highest total amounts with reorder_within()
+ggplot(Contribution_plot, aes(x = total_in_primary_city, y =  reorder_within(primary_city, total_in_primary_city, cand_nm), fill = cand_nm)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~cand_nm, scales = "free") +
+  scale_y_reordered() + # clean the y-axis 
+  scale_x_continuous(labels=scales::dollar_format()) + # clean the x-axis
+  labs(
+    title = "Where did candidates raise most money?",
+    x = "Amount raised",
+    y = element_blank()
+  ) +
+   theme(panel.border = element_rect(colour = "black", fill=NA, size=1),
+         strip.background = element_rect(color = "black", size = 1),
+        panel.background = element_rect(fill = "white"),
+        panel.grid.minor = element_line(colour = "grey", size = 0.5),
+        panel.grid.major = element_line(colour = "grey", size = 0.5)) +
+  scale_fill_manual(values = c("Clinton, Hillary Rodham" = "#1C49C3",
+                                "Trump, Donald J." = "#D80D22"))
+
+```
+
+
+# Challenge 2: 2016 California Contributors plots
+
+As discussed in class, I would like you to reproduce the plot that shows the top ten cities in highest amounts raised in political contributions in California during the 2016 US Presidential election.
+
+
+
+```{r challenge2, echo=FALSE, out.width="100%"}
+knitr::include_graphics(here::here("images", "challenge2.png"), error = FALSE)
+```
+
+
+To get this plot, you must join two dataframes; the one you have with all contributions, and data that can translate zipcodes to cities.
+You can find a file with all US zipcodes, e.g., here http://www.uszipcodelist.com/download.html. 
+
+The easiest way would be to create two plots and then place one next to each other. For this, you will need the `patchwork` package.
+https://cran.r-project.org/web/packages/patchwork/index.html
+
+While this is ok, what if one asked you to create the same plot for the top 10 candidates and not just the top two? The most challenging part is how to reorder within categories, and for this you will find Julia Silge's post on [REORDERING AND FACETTING FOR GGPLOT2](https://juliasilge.com/blog/reorder-within/) useful.
+
+
+```{r, load_CA_data, warnings= FALSE, message=FALSE}
+# Make sure you use vroom() as it is significantly faster than read.csv()
+CA_contributors_2016 <- vroom::vroom(here::here("data","CA_contributors_2016.csv"))
+
+
+```
+
+
+
+
+**Please seek out help when you need it,** and remember the [15-minute rule](https://mam2021.netlify.app/syllabus/#the-15-minute-rule){target=_blank}. You know enough R (and have enough examples of code from class and your readings) to be able to do this. If you get stuck, ask for help from others, post a question on Slack-- and remember that I am here to help too!  
+
+> As a true test to yourself, do you understand the code you submitted and are you able to explain it to someone else? 
+
+
+
+
+
+
+
+
+
+
