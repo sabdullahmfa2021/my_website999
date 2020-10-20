@@ -112,7 +112,7 @@ disqusShortname = ""
     [[params.tiles.showcase]]
       title = "US Election Data"
       subtitle = "Trump vs. Clinton in the 2016 Presidential Election"
-      image = "pic04.jpg"
+      image = "trump.jpg"
       url = "blogs/blog1"
 
     [[params.tiles.showcase]]
