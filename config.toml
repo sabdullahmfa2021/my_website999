@@ -100,8 +100,8 @@ disqusShortname = ""
     [[params.tiles.showcase]]
       title = "Alcohol Consuming Analysis"
       subtitle = "A look inside servings"
-      image = ""
-      url = "blogs/blog2"
+      image = "pic04.jpg"
+      url = "blogs/blog5"
 
     [[params.tiles.showcase]]
       title = "M&A Transactions"

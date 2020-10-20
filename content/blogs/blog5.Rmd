@@ -8,7 +8,7 @@ description: "Where do people drink the most beer, wine and spirits?"
 draft: false
 image: pic10.jpg
 keywords: ""
-slug: blog2
+slug: blog5
 title: Alcohol Consuming Analysis
 ---
 
