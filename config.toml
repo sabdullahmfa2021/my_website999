@@ -95,7 +95,7 @@ disqusShortname = ""
       title = "IMDB Ratings"
       subtitle = "Ratings and directors"
       image = "IMDB.jpg"
-      url = "blogs/aliquam"
+      url = "blogs/IMDBcode"
 
     [[params.tiles.showcase]]
       title = "Alcohol Consuming Analysis"

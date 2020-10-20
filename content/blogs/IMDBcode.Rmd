@@ -1,0 +1,172 @@
+
+---
+categories:
+- ""
+- ""
+date: "2020-10-20"
+description: "Where do people drink the most beer, wine and spirits?"
+draft: false
+image: pic10.jpg
+keywords: ""
+slug: IMDBcode
+title: IMDB Ratings
+---
+
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(fivethirtyeight)
+library(here)
+library(skimr)
+library(janitor)
+library(vroom)
+library(tidyquant)
+library(rvest)    # scrape websites
+library(purrr)  
+library(lubridate) #to handle dates
+```
+
+
+
+# Analysis of movies- IMDB dataset
+
+We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movie dataset](https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset)
+
+  
+```{r,load_movies, warning=FALSE, message=FALSE, eval=FALSE}
+
+movies <- read_csv(here::here("data", "movies.csv"))
+glimpse(movies)
+
+```
+
+Besides the obvious variables of `title`, `genre`, `director`, `year`, and `duration`, the rest of the variables are as follows:
+
+- `gross` : The gross earnings in the US box office, not adjusted for inflation
+- `budget`: The movie's budget 
+- `cast_facebook_likes`: the number of facebook likes cast memebrs received
+- `votes`: the number of people who voted for (or rated) the movie in IMDB 
+- `reviews`: the number of reviews for that movie
+- `rating`: IMDB average rating 
+
+## Use your data import, inspection, and cleaning skills to answer the following:
+
+- Are there any missing values (NAs)? Are all entries distinct or are there duplicate entries?
+```{r}
+skim(movies)
+```
+
+- Produce a table with the count of movies by genre, ranked in descending order
+```{r}
+movie_rank1 <- movies %>%
+  count(genre) %>% 
+  rename(number_of_movies = n) %>% 
+  arrange(desc(number_of_movies))
+  
+# table can be found in data section on RHS within global environment!
+  
+  
+  
+```
+- Produce a table with the average gross earning and budget (`gross` and `budget`) by genre. Calculate a variable `return_on_budget` which shows how many $ did a movie make at the box office for each $ of its budget. Ranked genres by this `return_on_budget` in descending order
+```{r}
+movie_rank2 <- movies %>% 
+  group_by(genre) %>%
+  summarise(
+      sum_gross = sum(gross),
+      sum_budget = sum(budget)
+      ) %>% 
+  mutate(return_on_budget = sum_gross / sum_budget) %>% 
+  arrange(desc(return_on_budget))
+
+```
+- Produce a table that shows the top 15 directors who have created the highest gross revenue in the box office. Don't just show the total gross amount, but also the mean, median, and standard deviation per director.
+```{r}
+movies_rank3 <- movies %>% 
+  group_by(director) %>% 
+#summarise will create new variables for summary statistics
+  summarise(sum_gross_director = sum(gross), 
+      mean_director = mean(gross),
+      median_director = median(gross),
+      std_director = sd(gross)) %>% 
+  arrange(desc(sum_gross_director)) %>% 
+  head(15)
+```
+- Finally, ratings. Produce a table that describes how ratings are distributed by genre. We don't want just the mean, but also, min, max, median, SD and some kind of a histogram or density graph that visually shows how ratings are distributed. 
+```{r}
+movies_rank4 <- movies %>% 
+  group_by(genre) %>% 
+  summarise(mean_ratings = mean(rating),
+            min_ratings = min(rating),
+            max_ratings = max(rating),
+            median_ratings = median(rating),
+            std_dev_ratings = sd(rating)
+  ) %>% 
+  arrange(desc(mean_ratings))
+
+ggplot(movies_rank4, aes(x = mean_ratings))+
+  geom_histogram(color = "black", fill = "blue")+
+  labs(
+    title = "Distribution",
+    x = "Avg Rating",
+    y = "Freq"
+  )
+```
+
+## Use `ggplot` to answer the following
+
+  - Examine the relationship between `gross` and `cast_facebook_likes`. Produce a scatterplot and write one sentence discussing whether the number of facebook likes that the cast has received is likely to be a good predictor of how much money a movie will make at the box office. What variable are you going to map to the Y- and X- axes?
+  
+  
+```{r, gross_on_fblikes}
+likes_plot <- movies %>% 
+  select(gross, cast_facebook_likes)
+
+ggplot(likes_plot, aes(x = cast_facebook_likes, y = gross))+
+    geom_point()+
+    labs(title = "Relation between Gross Sales and FB likes",x = "Facebook Likes", y = "Gross")
+```
+
+  - Examine the relationship between `gross` and `budget`. Produce a scatterplot and write one sentence discussing whether budget is likely to be a good predictor of how much money a movie will make at the box office.
+
+```{r, gross_on_budget}
+budget_plot <- movies %>% 
+  select(gross, budget)
+
+ggplot(budget_plot, aes(x = budget, y = gross))+
+    geom_point()+
+    labs(title = "Relation between Budget and Gross",x = "Budget", y = "Gross")
+```
+  
+  - Examine the relationship between `gross` and `rating`. Produce a scatterplot, faceted by `genre` and discuss whether IMDB ratings are likely to be a good predictor of how much money a movie will make at the box office. Is there anything strange in this dataset?
+
+```{r, gross_on_rating}
+rating_plot <- movies %>% 
+  select(gross, rating, genre)
+
+ggplot(movies, aes(x = rating, y = gross))+
+    geom_point()+
+    facet_wrap(vars(genre))+
+    labs(title = "Relation between Gross Sales and rating",x = "Rating", y = "Gross")
+```
+
