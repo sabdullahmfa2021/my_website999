@@ -4,9 +4,9 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "Where do people drink the most beer, wine and spirits?"
+description: Ratings and directors
 draft: false
-image: pic10.jpg
+image: pic04.jpg
 keywords: ""
 slug: IMDBcode
 title: IMDB Ratings
@@ -55,7 +55,7 @@ We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movi
   
 ```{r,load_movies, warning=FALSE, message=FALSE, eval=FALSE}
 
-movies <- read_csv(here::here("data", "movies.csv"))
+movies <- read_csv("movies.csv")
 glimpse(movies)
 
 ```
