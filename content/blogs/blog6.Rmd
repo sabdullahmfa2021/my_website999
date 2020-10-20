@@ -56,7 +56,8 @@ We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movi
 ```{r,load_movies, warning=FALSE, message=FALSE, eval=FALSE}
 
 movies <- read_csv("movies.csv")
-glimpse(movies)
+data(movies)
+view(movies)
 
 ```
 
