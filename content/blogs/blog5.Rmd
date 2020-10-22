@@ -9,7 +9,7 @@ draft: false
 image: pic04.jpg
 keywords: ""
 slug: blog5
-title: "Alcohol Consuming Analysis"
+title: Alcohol Consuming Analysis
 ---
 
 

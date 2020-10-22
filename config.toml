@@ -110,12 +110,6 @@ disqusShortname = ""
       url = "blogs/blog7"
 
     [[params.tiles.showcase]]
-      title = "US Election Data"
-      subtitle = ""
-      image = "trump.jpg"
-      url = "blogs/blog1"
-
-    [[params.tiles.showcase]]
       title = "Confidence Intervals"
       subtitle = "Data statistics"
       image = "pic05.jpg"

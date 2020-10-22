@@ -4,12 +4,12 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "How do directors fair against their ratings?"
+description: "Merger arbitrage hedge fund strategies"
 draft: false
 image: IMDB01.jpg
 keywords: ""
 slug: blog7
-title: "IMDB Ratings"
+title: M&A Transactions
 ---
 
 
