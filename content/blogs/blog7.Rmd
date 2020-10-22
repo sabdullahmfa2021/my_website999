@@ -1,0 +1,831 @@
+
+---
+categories:
+- ""
+- ""
+date: "2020-10-20"
+description: "An insight into Merger Arbitrage"
+draft: false
+image: pic10.jpg
+keywords: ""
+slug: blog7
+title: Merger Arbirtage
+---
+
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+```{r}
+options(tz="America/New_York")
+Sys.setenv(TZ="America/New_York")
+```
+
+```{r load-libraries, include=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(here)
+library(skimr)
+library(janitor)
+library(httr)
+library(readxl)
+library(vroom)
+library(data.table)
+library(infer)
+library(ggridges)
+library(viridis)
+library(tidyquant)
+library(rvest)    # scrape websites
+library(purrr)  
+library(lubridate) #to handle dates
+library(ggrepel) # to avoid loverlapping legends
+library(ggplot2)
+library(broom)
+library(huxtable)
+```
+# Data Collection
+
+## Benchmark data
+
+Risk-free Rates
+
+```{r}
+tbill <- vroom("https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=DTB3&scale=left&cosd=2009-08-01&coed=2020-10-09&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Daily&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date=2020-10-14&revision_date=2020-10-14&nd=1954-01-04") %>%
+  mutate(DTB3 = DTB3/100) %>%
+  rename("date" = "DATE",
+         "T_bill" = "DTB3") %>% 
+  mutate(T_bill_d = (1 + T_bill)^(1/252)-1,
+         date = as.Date(date,"%Y-%m-%d"))
+```
+
+Indices
+
+```{r}
+benchmark <- 
+  data.frame(index = c("MNA", "^RUA", "^FTSE","^FTAS", "^IXIC","NYA", "^DJI", "^GSPC"),
+             description = c("IQ Merger Arbitrage ETF", "Russell_3000", "FTSE 100", "FTSE All Share","NASDAQ_Composite", "NYSE Composite", "Dow Jones Industrial Average", "SP_500")) %>% 
+  tq_get(get  = "stock.prices",
+         from = "2009-01-01",
+         to   = "2020-08-31") %>%
+  select(index, description, date, close) %>%
+  group_by(index) %>%
+  mutate(index_return = close/lag(close) - 1)
+```
+
+## Merger Data
+
+Merger Deals
+```{r, get tickers}
+
+stocks2 <- read_excel("MA_vF.xlsx", sheet = "Sheet1") %>% 
+  select(acquirer, target, DealStatus, announce_date, close_date) %>%
+  mutate(DealStatus = case_when(
+    DealStatus == "Completed" ~ DealStatus,
+    TRUE ~ "Failed"),
+    DealID = paste(acquirer,target))
+
+```
+
+## Get Stock Data and build Dataframes
+
+### Acquirer Data
+```{r get_acqprice_data, message=FALSE, warning=FALSE, cache=TRUE}
+acquirer_raw <- stocks2 %>%
+  select(acquirer) %>% 
+  tq_get(get  = "stock.prices",
+         from = "2009-01-01",
+         to   = "2020-08-31") %>%
+  select(date, acquirer, open, close)
+
+```
+
+### Target Data
+```{r get_tarprice_data, message=FALSE, warning=FALSE, cache=TRUE}
+target_raw <- stocks2 %>% 
+  select(target) %>% 
+  tq_get(get  = "stock.prices",
+         from = "2009-01-01",
+         to   = "2020-08-31") %>%
+  select(date, target, open, close)
+
+```
+
+### Reformat 
+```{r}
+# Reformat acquirer data
+stock_data_acquirer <- acquirer_raw %>%
+  group_by(acquirer) %>% 
+  mutate(close_acquirer = sprintf("%.2f", open, na.rm = TRUE)) %>%
+  select(acquirer, date, close_acquirer)
+
+```
+
+```{r}
+# Reformat target data
+stock_data_target <- target_raw %>%
+  group_by(target) %>% 
+  mutate(close_target = sprintf("%.2f", open, na.rm = TRUE)) %>%
+  select(target, date, close_target)
+```
+
+
+# Trade from 1 day past announcement date
+```{r}
+acq_tar <- stocks2 %>%
+  
+  #Add acquirer data
+  left_join(stock_data_acquirer, by = c("acquirer")) %>%
+  distinct(DealID, date, .keep_all = T) %>% 
+  mutate(announce_date = as.Date(announce_date,"%Y-%m-%d", tz = "America/New_York"),
+         close_date = as.Date(close_date,"%Y-%m-%d", tz = "America/New_York"),
+         standard_date = date - announce_date,
+         standard_date2 = lead(standard_date, n = 2L)) %>% 
+  group_by(DealID) %>% 
+  filter(standard_date >= -2,
+         date <= close_date) %>% 
+  mutate(period = row_number(),
+         period = period + as.numeric(time_length( min(standard_date), "days")) -2 ) %>% 
+ 
+  # Add target data
+  left_join(stock_data_target, by = c("target", "date")) %>%
+  drop_na(close_target) %>%
+  
+  # Add Acquirer Returns
+  group_by(DealID) %>%
+  mutate(close_acquirer = as.numeric(close_acquirer, na.rm = TRUE),
+    ret_acq = ifelse(period < 0, NA, ifelse(period > 0, close_acquirer/lag(close_acquirer) - 1, 0))) %>%
+  
+  # Add target Returns
+  group_by(DealID) %>%
+  mutate(close_target = as.numeric(close_target, na.rm = TRUE),
+    ret_tar = ifelse(period < 0, NA, ifelse(period > 0, close_target/lag(close_target) - 1, 0))) %>%
+  
+  # Add combined returns
+  
+  mutate(ret_combined =  ifelse(is.na(ret_tar),NA, ifelse(is.na(ret_acq),NA, ret_tar - ret_acq))) %>% 
+  # mutate(ret_combined = ifelse(DealStatus == "Completed", ret_tar - ret_acq,  ret_acq - ret_tar)) %>% # If predict deal succeeds vs predict deal fails, assuming 100% predictive capabilities - CAN CHANGE
+  # Get rid of non-sense returns
+  filter(!is.infinite(ret_combined))
+
+```
+
+## Daily Return and Acquirer - Target Spread
+```{r}
+acq_tar %>%
+  group_by(period) %>%
+  # Summarise means per period whilst removing all NAs. Bad data quality forces us to do this
+  summarise(mean_acq = mean(ret_acq, na.rm = TRUE),
+            mean_tar = mean(ret_tar, na.rm = TRUE),
+            mean_strat = mean(ret_combined, na.rm = TRUE)) %>%
+  filter(period <= 50) %>%
+  ggplot() +
+  theme_bw() +
+  geom_line(aes(x = period, y = (mean_acq)), colour = "red") + # Acquirer return
+  geom_line(aes(x = period, y = (mean_tar)), colour = "blue") + # Target return
+
+  labs(title = "Return spread between Target and Acquirer narrows quickly",
+       subtitle = "Mean Daily Returns of Targets (Blue) and Acquirers (Red) per Day from Announcement",
+       y = "Daily Returns",
+       x = "Day from initial announcement") + 
+  theme_economist_white()
+
+ggsave("Return Spread Target an Acquirer.png",
+       plot = last_plot(),
+       scale = 1,
+       width = 20,
+       height = 15,
+       units = "cm",
+       dpi = 300,
+       limitsize = TRUE)
+
+knitr::include_graphics(here::here("Return Spread Target an Acquirer.png"), error = FALSE)
+            
+  
+acq_tar %>%
+  group_by(period) %>%
+  # Summarise means per period whilst removing all NAs. Bad data quality forces us to do this
+  summarise(mean_acq = mean(ret_acq, na.rm = TRUE),
+            mean_tar = mean(ret_tar, na.rm = TRUE),
+            mean_strat = mean(ret_combined, na.rm = TRUE)) %>%
+  filter(period <= 50) %>%
+  ggplot() +
+  theme_bw() +
+  geom_line(aes(x = period, y = (mean_strat)), colour = "green") + # Portfolio 
+  labs(title = "Target and Acquirer Spread drives Strategy Return",
+       subtitle = "Mean Daily Returns of Strategy per Day from Announcement",
+       y = "Daily Returns",
+       x = "Day from initial announcement") + 
+  theme_economist_white()
+
+ggsave("Strategy Return from Spread.png",
+       plot = last_plot(),
+       scale = 1,
+       width = 20,
+       height = 15,
+       units = "cm",
+       dpi = 300,
+       limitsize = TRUE)
+
+knitr::include_graphics(here::here("Strategy Return from Spread.png"), error = FALSE)
+
+```
+
+
+
+## Cumulative Return
+
+### Acquirer
+```{r}
+# Cumulative return for acquirer
+initial_acq <- acq_tar %>%
+  filter(period == 0) %>%
+  rename(initial_acq = close_acquirer) %>%
+  select(acquirer, target, initial_acq) %>%
+  distinct()
+
+cum_acq <- left_join(acq_tar, initial_acq, by = c("acquirer", "target")) %>%
+  mutate(cum_ret_acq = ifelse(period > -1, close_acquirer/initial_acq - 1, NA)) %>%
+  group_by(period) %>%
+  summarise(mean_cum_ret_acq = mean(cum_ret_acq, na.rm =TRUE)) %>%
+  filter(period <= 50)
+```
+
+### Target
+```{r}
+
+# Cumulative return for target
+initial_tar <- acq_tar %>%
+  filter(period == 0) %>%
+  rename(initial_tar = close_target) %>%
+  select(acquirer, target, initial_tar) %>% 
+  distinct()
+
+cum_tar <- left_join(acq_tar, initial_tar, by = c("acquirer", "target")) %>%
+  mutate(cum_ret_tar = ifelse(period > -1, close_target/initial_tar - 1, NA)) %>%
+  group_by(period) %>%
+  summarise(mean_cum_ret_tar = mean(cum_ret_tar, na.rm =TRUE)) %>%
+  filter(period <= 50)
+```
+
+### Cumulative Return Spread
+```{r}
+
+# Combine all
+cum_all <- left_join(cum_acq, cum_tar, by = "period") %>%
+  filter(period <= 50)
+  
+
+ggplot(cum_all) +
+  
+  geom_line(aes(x = period, y = mean_cum_ret_tar), colour = "blue") +
+  geom_line(aes(x = period, y = mean_cum_ret_acq), colour = "red") +
+  theme_bw() +
+  labs(subtitle = "Mean Cumulative Return - Target (Blue) vs Acquirer (Red)",
+       title = "Target outperformance in cumulative return driven by early gains",
+       y = "Cumulative Return",
+       x = "Day from announcement") + 
+  theme_economist_white()
+
+ggsave("Cumulative Returns Target and Acquirer.png",
+       plot = last_plot(),
+       scale = 1,
+       width = 20,
+       height = 15,
+       units = "cm",
+       dpi = 300,
+       limitsize = TRUE)
+
+knitr::include_graphics(here::here("Cumulative Returns Target and Acquirer.png"), error = FALSE)
+
+```
+
+## Correlation between return and deal completion
+
+### Acquirer
+```{r}
+end_acq <- acq_tar %>%
+  mutate(diff = close_date - date) %>%
+  filter(diff == 0) %>%
+  rename(end_acq = close_acquirer) %>%
+  select(acquirer, period, target, end_acq, DealStatus) %>%
+  distinct()
+
+
+deal_ret_acq <- left_join(end_acq, initial_acq, by = c("acquirer", "target")) %>% 
+  distinct() %>%
+  mutate(annualised_ret = (end_acq/initial_acq)^(252/period) - 1) %>%
+  group_by(DealStatus) %>%
+  summarise(mean_annualised_acq_ret = mean(annualised_ret, na.rm = TRUE))
+
+deal_ret_acq
+```
+### Target
+```{r}
+end_tar <- acq_tar %>%
+  mutate(diff = close_date - date) %>%
+  filter(diff == 0) %>%
+  rename(end_tar = close_target) %>%
+  select(acquirer, period, target, end_tar, DealStatus) %>%
+  distinct()
+
+
+deal_ret_tar <- left_join(end_tar, initial_tar, by = c("acquirer", "target")) %>%
+  filter(!is.na(end_tar),
+         DealID.x != "T STRP") %>%
+  mutate(annualised_ret = (end_tar/initial_tar)^(252/period) - 1) %>%
+  group_by(DealStatus) %>%
+  summarise(mean_annualised_tar_ret = sprintf("%.2f",mean(annualised_ret, na.rm = TRUE)))
+
+deal_ret_tar
+```
+
+ *Huge failed deal target return driven by T - STRP deal, where STRP's stock increased by 150% in 20 days.*
+
+## Returns of strategy over timeline
+
+### S&P 500 is no deal
+```{r}
+
+acq_tar2 <- acq_tar %>%
+  filter(period <= 50) %>% 
+  group_by(date) %>%
+  summarise(ret_strat = mean(ret_combined)) %>% 
+  filter(!is.na(ret_strat))
+
+
+
+
+SP_initial <- benchmark %>%
+  filter(description == "SP_500") %>%
+  filter(date >= "2015-01-01") %>%
+  arrange(date) %>%
+  head(n = 1) %>%
+  rename(initial_index = close) %>%
+  select(- date, - index_return)
+
+  ggplot(acq_tar2) +
+  geom_line(aes(x = date, y = ret_strat), colour = "red") 
+
+benchmark %>%
+  filter(description == "SP_500") %>%
+  arrange(date) %>%
+  left_join(SP_initial, by = c("description", "index")) %>%
+  left_join(acq_tar2, by = "date") %>%
+  select(date, close, initial_index, ret_strat) %>%
+  mutate(index_ret = close/lag(close) - 1,
+         cum_index_ret = close/initial_index,
+         ret_strat_adjusted = ifelse(is.na(ret_strat), index_ret, ret_strat)) %>%
+  filter(date >= "2015-01-01") %>%
+  mutate(retplus1 = ret_strat_adjusted + 1,
+    cum_ret_strat = cumprod(retplus1)) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = cum_index_ret), colour = "black") +
+  geom_line(aes(x = date, y = cum_ret_strat), colour = "green") +
+  labs(subtitle = "Cumulative Return Strategy (Green) vs Index (Black)",
+       title = "Strategy Generates Above Market Returns",
+       y = "Cumulative Return",
+       x = "Day from initial investment") + 
+  theme_economist_white()
+
+ggsave("Cumulative Return Strategy vs Index.png",
+       plot = last_plot(),
+       scale = 1,
+       width = 20,
+       height = 15,
+       units = "cm",
+       dpi = 300,
+       limitsize = TRUE)
+
+knitr::include_graphics(here::here("Cumulative Return Strategy vs Index.png"), error = FALSE)
+
+```
+### Risk free if no deal
+```{r}
+benchmark %>%
+  filter(description == "SP_500") %>%
+  arrange(date) %>%
+  left_join(SP_initial, by = c("description", "index")) %>%
+  left_join(acq_tar2, by = "date") %>%
+  left_join(tbill, by = "date") %>%
+  select(date, close, initial_index, ret_strat, T_bill_d) %>%
+  mutate(index_ret = close/lag(close) - 1,
+         cum_index_ret = close/initial_index,
+         ret_strat_adjusted = ifelse(is.na(ret_strat), T_bill_d, ret_strat)) %>%
+  filter(date >= "2014-05-01") %>%
+  mutate(retplus1 = ret_strat_adjusted + 1,
+    cum_ret_strat = cumprod(retplus1)) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = cum_index_ret), colour = "black") +
+  geom_line(aes(x = date, y = cum_ret_strat), colour = "green") +
+  labs(subtitle = "Cumulative Return Strategy (Green) vs Index (Black)",
+       title = "Strategy Generates Above Market Returns",
+       y = "Cumulative Return",
+       x = "Day from initial investment") + 
+  theme_economist_white()
+```
+
+## CAPM
+```{r}
+benchmarkSP <- benchmark %>%
+  filter(description == "SP_500") %>%
+  pivot_wider(values_from = index_return, names_from = description) %>%
+  select(date, SP_500)
+
+
+CAPM <- acq_tar %>%
+  filter(period <= 20) %>% 
+  left_join(tbill, by = "date") %>%
+  left_join(benchmarkSP, by = "date") %>% 
+  filter(!is.na(ret_combined)) %>% 
+  mutate(Rm_Rf = SP_500 - T_bill_d,
+         Rs_Rf = ret_combined - T_bill_d) %>%  # CAN MUTATE RET_Strat = S&P/TBill if return = NA, then use that to replace ret_combined here
+  drop_na(Rm_Rf, Rs_Rf) %>%
+  filter(!is.infinite(Rs_Rf))
+
+ggplot(CAPM, aes(x = Rm_Rf, y = Rs_Rf, na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth(method = lm)  +
+  ylim(-1,1) +
+  labs(subtitle = "Excess Returns of Startegy vs Market Benchmark (scale ignoring 2 outliers)",
+       title = "Regression shows minimal positive Alpha and Beta for daily returns",
+       y = "Excess Return Strategy",
+       x = "Excess Return Benchmark") + 
+  theme_economist_white()
+
+ggsave("Excess Returns of Startegy vs Market Benchmark.png",
+       plot = last_plot(),
+       scale = 1,
+       width = 25,
+       height = 15,
+       units = "cm",
+       dpi = 300,
+       limitsize = TRUE)
+
+knitr::include_graphics(here::here("Excess Returns of Startegy vs Market Benchmark.png"), error = FALSE)
+
+
+CAPM_regression <- lm(Rs_Rf ~ Rm_Rf, data = CAPM, na.rm =TRUE)
+
+CAPM_regression
+
+huxreg(CAPM_regression,
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05, 
+       stars = NULL
+)
+
+msummary(CAPM_regression)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----- END OF ANALYSIS USED IN PAPER --------
+
+
+
+
+### Unsused Calculations
+The remainder of this document are conducted analyses that were chosen not to report on in the project.
+
+
+
+
+
+
+TRADE AFTER ANNOUNCEMENT DATE - SHOULD USE CLOSING PRICES HERE
+```{r}
+# Reformat acquirer data
+stock_data_acquirer_v2 <- acquirer_raw %>%
+  group_by(acquirer) %>% 
+  mutate(close_acquirer = sprintf("%.2f", close, na.rm = TRUE)) %>%
+  select(acquirer, date, close_acquirer)
+
+```
+
+```{r}
+# Reformat target data
+stock_data_target_v2 <- target_raw %>%
+  group_by(target) %>% 
+  mutate(close_target = sprintf("%.2f", close, na.rm = TRUE)) %>%
+  select(target, date, close_target)
+```
+
+```{r}
+acq_tar <- stocks2 %>%
+  
+  #Add acquirer data
+  left_join(stock_data_acquirer, by = c("acquirer")) %>%
+  distinct(DealID, date, .keep_all = T) %>% 
+  mutate(announce_date = as.Date(announce_date,"%Y-%m-%d", tz = "America/New_York"),
+         close_date = as.Date(close_date,"%Y-%m-%d", tz = "America/New_York"),
+         standard_date = date - announce_date,
+         standard_date2 = lead(standard_date, n = 2L)) %>% 
+  group_by(DealID) %>% 
+  filter(standard_date >= -2,
+         date <= close_date) %>% 
+  mutate(period = row_number(),
+         period = period + as.numeric(time_length( min(standard_date), "days")) -1) %>% 
+
+  left_join(stock_data_target, by = c("target", "date")) %>%
+  drop_na(close_target) %>%
+
+  group_by(DealID) %>%
+  mutate(close_acquirer = as.numeric(close_acquirer, na.rm = TRUE),
+    ret_acq = ifelse(period < 0, NA, ifelse(period > 0, close_acquirer/lag(close_acquirer) - 1, 0))) %>%
+  
+  group_by(DealID) %>%
+  mutate(close_target = as.numeric(close_target, na.rm = TRUE),
+    ret_tar = ifelse(period < 0, NA, ifelse(period > 0, close_target/lag(close_target) - 1, 0))) %>%
+  
+  
+  mutate(ret_combined =  ret_tar - ret_acq) %>% 
+
+  filter(!is.infinite(ret_combined))
+
+
+acq_tar_v2 <- stocks2 %>%
+  
+  #Add acquirer data
+  left_join(stock_data_acquirer_v2, by = c("acquirer")) %>%
+  distinct(DealID, date, .keep_all = T) %>% 
+  mutate(announce_date = as.Date(announce_date,"%Y-%m-%d", tz = "America/New_York"),
+         close_date = as.Date(close_date,"%Y-%m-%d", tz = "America/New_York"),
+         standard_date = date - announce_date,
+         standard_date2 = lead(standard_date, n = 2L)) %>% 
+  group_by(DealID) %>% 
+  filter(standard_date2 >= -2,
+         date <= close_date) %>%
+  # Add period number (by trading days)
+  mutate(period = row_number(),
+         period = period + as.numeric(time_length( min(standard_date), "days")) -1) %>% 
+  
+  # Add target data
+  left_join(stock_data_target_v2, by = c("target", "date")) %>%
+  drop_na(close_target) %>%
+  
+  # Add Acquirer Returns
+  group_by(DealID) %>%
+  mutate(close_acquirer = as.numeric(close_acquirer, na.rm = TRUE),
+    ret_acq = ifelse(period < 0, NA, ifelse(period > 0, close_acquirer/lag(close_acquirer) - 1, 0))) %>%
+  
+  # Add target Returns
+  group_by(DealID) %>%
+  mutate(close_target = as.numeric(close_target, na.rm = TRUE),
+    ret_tar = ifelse(period < 0, NA, ifelse(period > 0, close_target/lag(close_target) - 1, 0))) %>%
+  
+  # Add combined returns
+  mutate(ret_combined =  ret_tar - ret_acq) %>% # If predict deal succeeds vs predict deal fails, assuming 100% predictive capabilities - CAN CHANGE
+  
+  filter(!is.infinite(ret_combined))
+
+# acq_tar_v2 %>% filter(period == 0) %>% 
+#   mutate(match = announce_date - date) %>% 
+#   summarise(sum(match))
+
+```
+
+Daily Return
+
+```{r}
+acq_tar_v2 %>%
+  group_by(period) %>%
+  # Summarise means per period whilst removing all NAs. Bad data quality forces us to do this
+  summarise(mean_acq = mean(ret_acq, na.rm = TRUE),
+            mean_tar = mean(ret_tar, na.rm = TRUE),
+            mean_strat = mean(ret_combined, na.rm = TRUE)) %>%
+  filter(period <= 50) %>%
+  ggplot() +
+  theme_bw() +
+  geom_line(aes(x = period, y = mean_acq), colour = "red") + # Acquirer return
+  geom_line(aes(x = period, y = mean_tar), colour = "blue") + # Target return
+  geom_line(aes(x = period, y = mean_strat), colour = "green") + # Portfolio 
+  labs(title = "Return spread between Target and Acquirer narrows quickly",
+       subtitle = "Mean Daily Returns of Targets, Acquirers and Strategy per Day from Announcement",
+       y = "Daily Returns",
+       x = "Day from initial investment") + 
+  theme_economist_white()
+
+
+```
+
+
+
+ Cumulative Return
+```{r}
+# Cumulative return for acquirer
+initial_acq_v2 <- acq_tar_v2 %>%
+  filter(period == 0) %>%
+  rename(initial_acq = close_acquirer) %>%
+  select(acquirer, target, initial_acq) %>%
+  distinct()
+
+cum_acq_v2 <- left_join(acq_tar_v2, initial_acq_v2, by = c("acquirer", "target")) %>%
+  mutate(cum_ret_acq = ifelse(period > 0, close_acquirer/initial_acq - 1, NA)) %>%
+  group_by(period) %>%
+  summarise(mean_cum_ret_acq = mean(cum_ret_acq, na.rm =TRUE)) %>%
+  filter(period <= 50)
+```
+```{r}
+
+# Cumulative return for target
+initial_tar_v2 <- acq_tar_v2 %>%
+  filter(period == 0) %>%
+  rename(initial_tar = close_target) %>%
+  select(acquirer, target, initial_tar)
+
+cum_tar_v2 <- left_join(acq_tar_v2, initial_tar_v2, by = c("acquirer", "target")) %>%
+  mutate(cum_ret_tar = ifelse(period > 0, close_target/initial_tar - 1, NA)) %>%
+  group_by(period) %>%
+  summarise(mean_cum_ret_tar = mean(cum_ret_tar, na.rm =TRUE)) %>%
+  filter(period <= 50)
+```
+
+```{r}
+
+# Combine all
+cum_all_v2 <- left_join(cum_acq_v2, cum_tar_v2, by = "period")
+  
+
+ggplot(cum_all_v2) +
+  
+  geom_line(aes(x = period, y = mean_cum_ret_tar), colour = "blue") +
+  geom_line(aes(x = period, y = mean_cum_ret_acq), colour = "red") +
+  theme_bw() +
+  labs(title = "Mean Cumulative Return",
+       subtitle = "Investments start 1 day after announcement of potential M&A deal",
+       y = "Cumulative Return",
+       x = "Day from initial investment")
+
+```
+
+Correlation between return and deal completion
+
+Correlation between acquirer return and deal completion
+
+```{r}
+end_acq_v2 <- acq_tar_v2 %>%
+  mutate(diff = close_date - date) %>%
+  filter(diff == 0) %>%
+  rename(end_acq = close_acquirer) %>%
+  select(acquirer, period, target, end_acq, DealStatus) %>%
+  distinct()
+
+
+deal_ret_acq_v2 <- left_join(end_acq, initial_acq, by = c("acquirer", "target")) %>%
+  filter(acquirer != "RTX") %>%
+  mutate(annualised_ret = (end_acq/initial_acq)^(252/period) - 1) %>%
+  group_by(DealStatus) %>%
+  summarise(mean_annualised_acq_ret = mean(annualised_ret, na.rm = TRUE))
+
+deal_ret_acq_v2
+```
+
+Correlation between target return and deal completion
+
+```{r}
+end_tar_v2 <- acq_tar_v2 %>%
+  mutate(diff = close_date - date) %>%
+  filter(diff == 0) %>%
+  rename(end_tar = close_target) %>%
+  select(acquirer, period, target, end_tar, DealStatus) %>%
+  distinct()
+
+
+deal_ret_tar_v2 <- left_join(end_tar_v2, initial_tar_v2, by = c("acquirer", "target")) %>%
+  filter(acquirer != "RTX") %>%
+  mutate(annualised_ret = (end_tar/initial_tar)^(252/period) - 1) %>%
+  group_by(DealStatus) %>%
+  summarise(mean_annualised_tar_ret = mean(annualised_ret, na.rm = TRUE))
+
+deal_ret_tar
+```
+
+
+Returns of strategy over timeline
+
+Using S&P 500 index if there is no deal
+
+```{r}
+acq_tar2_v2 <- acq_tar_v2 %>%
+  group_by(date) %>%
+  summarise(ret_strat = mean(ret_combined))
+
+SP_initial_v2 <- benchmark %>%
+  filter(description == "SP_500") %>%
+  filter(date >= "2014-05-01") %>%
+  arrange(date) %>%
+  head(n = 1) %>%
+  rename(initial_index = close) %>%
+  select(- date, - index_return)
+
+benchmark %>%
+  filter(description == "SP_500") %>%
+  arrange(date) %>%
+  left_join(SP_initial_v2, by = c("description", "index")) %>%
+  left_join(acq_tar2_v2, by = "date") %>%
+  select(date, close, initial_index, ret_strat) %>%
+  mutate(index_ret = close/lag(close) - 1,
+         cum_index_ret = close/initial_index,
+         ret_strat_adjusted = ifelse(is.na(ret_strat), index_ret, ret_strat)) %>%
+  filter(date >= "2014-05-01") %>%
+  mutate(retplus1 = ret_strat_adjusted + 1,
+    cum_ret_strat = cumprod(retplus1)) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = cum_index_ret), colour = "red") +
+  geom_line(aes(x = date, y = cum_ret_strat), colour = "green") ###?????### 
+```
+
+Using risk-free rate if there is no deal
+
+
+```{r}
+benchmark %>%
+  filter(description == "SP_500") %>%
+  arrange(date) %>%
+  left_join(SP_initial_v2, by = c("description", "index")) %>%
+  left_join(acq_tar2_v2, by = "date") %>%
+  left_join(tbill, by = "date") %>%
+  select(date, close, initial_index, ret_strat, T_bill_d) %>%
+  mutate(index_ret = close/lag(close) - 1,
+         cum_index_ret = close/initial_index,
+         ret_strat_adjusted = ifelse(is.na(ret_strat), T_bill_d, ret_strat)) %>%
+  filter(date >= "2014-05-01") %>%
+  mutate(retplus1 = ret_strat_adjusted + 1,
+    cum_ret_strat = cumprod(retplus1)) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = cum_index_ret), colour = "red") +
+  geom_line(aes(x = date, y = cum_ret_strat), colour = "green") ###?????### 
+```
+
+CAPM
+```{r}
+
+CAPM_v2 <- acq_tar_v2 %>%
+  left_join(tbill, by = "date") %>%
+  left_join(benchmarkSP, by = "date") %>%
+  mutate(Rm_Rf = SP_500 - T_bill_d,
+         Rs_Rf = ret_combined - T_bill_d) %>%
+  drop_na(Rm_Rf, Rs_Rf) %>%
+  filter(!is.infinite(Rs_Rf))
+
+ggplot(CAPM_v2, aes(x = Rm_Rf, y = Rs_Rf, na.rm = TRUE)) +
+  geom_point() 
+
+CAPM_regression_v2 <- lm(Rs_Rf ~ Rm_Rf, data = CAPM, na.rm =TRUE)
+
+CAPM_regression_v2
+
+huxreg(CAPM_regression_v2,
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05, 
+       stars = NULL
+)
+```

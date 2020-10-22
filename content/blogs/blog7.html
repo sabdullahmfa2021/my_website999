@@ -1,0 +1,133 @@
+---
+categories:
+- ""
+- ""
+date: "2020-10-20"
+description: "a turd covered in chocolate VS a chocolate covered turd"
+draft: false
+image: IMDB01.jpg
+keywords: ""
+slug: blog6
+title: Trump vs. Clinton
+---
+
+
+
+<div id="analysis-of-movies--imdb-dataset" class="section level1">
+<h1>Analysis of movies- IMDB dataset</h1>
+<p>We will look at a subset sample of movies, taken from the <a href="https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset">Kaggle IMDB 5000 movie dataset</a></p>
+<pre class="r"><code>movies &lt;- read_csv(&quot;movies.csv&quot;)
+glimpse(movies)</code></pre>
+<pre><code>## Rows: 2,961
+## Columns: 11
+## $ title               &lt;chr&gt; &quot;Avatar&quot;, &quot;Titanic&quot;, &quot;Jurassic World&quot;, &quot;The Aveng…
+## $ genre               &lt;chr&gt; &quot;Action&quot;, &quot;Drama&quot;, &quot;Action&quot;, &quot;Action&quot;, &quot;Action&quot;, …
+## $ director            &lt;chr&gt; &quot;James Cameron&quot;, &quot;James Cameron&quot;, &quot;Colin Trevorro…
+## $ year                &lt;dbl&gt; 2009, 1997, 2015, 2012, 2008, 1999, 1977, 2015, 2…
+## $ duration            &lt;dbl&gt; 178, 194, 124, 173, 152, 136, 125, 141, 164, 93, …
+## $ gross               &lt;dbl&gt; 7.61e+08, 6.59e+08, 6.52e+08, 6.23e+08, 5.33e+08,…
+## $ budget              &lt;dbl&gt; 2.37e+08, 2.00e+08, 1.50e+08, 2.20e+08, 1.85e+08,…
+## $ cast_facebook_likes &lt;dbl&gt; 4834, 45223, 8458, 87697, 57802, 37723, 13485, 92…
+## $ votes               &lt;dbl&gt; 886204, 793059, 418214, 995415, 1676169, 534658, …
+## $ reviews             &lt;dbl&gt; 3777, 2843, 1934, 2425, 5312, 3917, 1752, 1752, 3…
+## $ rating              &lt;dbl&gt; 7.9, 7.7, 7.0, 8.1, 9.0, 6.5, 8.7, 7.5, 8.5, 7.2,…</code></pre>
+<p>Besides the obvious variables of <code>title</code>, <code>genre</code>, <code>director</code>, <code>year</code>, and <code>duration</code>, the rest of the variables are as follows:</p>
+<ul>
+<li><code>gross</code> : The gross earnings in the US box office, not adjusted for inflation</li>
+<li><code>budget</code>: The movie’s budget</li>
+<li><code>cast_facebook_likes</code>: the number of facebook likes cast memebrs received</li>
+<li><code>votes</code>: the number of people who voted for (or rated) the movie in IMDB</li>
+<li><code>reviews</code>: the number of reviews for that movie</li>
+<li><code>rating</code>: IMDB average rating</li>
+</ul>
+<div id="use-your-data-import-inspection-and-cleaning-skills-to-answer-the-following" class="section level2">
+<h2>Use your data import, inspection, and cleaning skills to answer the following:</h2>
+<ul>
+<li>Produce a table with the count of movies by genre, ranked in descending order</li>
+</ul>
+<pre class="r"><code>movie_rank1 &lt;- movies %&gt;%
+  count(genre) %&gt;% 
+  rename(number_of_movies = n) %&gt;% 
+  arrange(desc(number_of_movies))
+  
+# table can be found in data section on RHS within global environment!</code></pre>
+<ul>
+<li>Produce a table with the average gross earning and budget (<code>gross</code> and <code>budget</code>) by genre. Calculate a variable <code>return_on_budget</code> which shows how many $ did a movie make at the box office for each $ of its budget. Ranked genres by this <code>return_on_budget</code> in descending order</li>
+</ul>
+<pre class="r"><code>movie_rank2 &lt;- movies %&gt;% 
+  group_by(genre) %&gt;%
+  summarise(
+      sum_gross = sum(gross),
+      sum_budget = sum(budget)
+      ) %&gt;% 
+  mutate(return_on_budget = sum_gross / sum_budget) %&gt;% 
+  arrange(desc(return_on_budget))</code></pre>
+<ul>
+<li>Produce a table that shows the top 15 directors who have created the highest gross revenue in the box office. Don’t just show the total gross amount, but also the mean, median, and standard deviation per director.</li>
+</ul>
+<pre class="r"><code>movies_rank3 &lt;- movies %&gt;% 
+  group_by(director) %&gt;% 
+#summarise will create new variables for summary statistics
+  summarise(sum_gross_director = sum(gross), 
+      mean_director = mean(gross),
+      median_director = median(gross),
+      std_director = sd(gross)) %&gt;% 
+  arrange(desc(sum_gross_director)) %&gt;% 
+  head(15)</code></pre>
+<ul>
+<li>Finally, ratings. Produce a table that describes how ratings are distributed by genre. We don’t want just the mean, but also, min, max, median, SD and some kind of a histogram or density graph that visually shows how ratings are distributed.</li>
+</ul>
+<pre class="r"><code>movies_rank4 &lt;- movies %&gt;% 
+  group_by(genre) %&gt;% 
+  summarise(mean_ratings = mean(rating),
+            min_ratings = min(rating),
+            max_ratings = max(rating),
+            median_ratings = median(rating),
+            std_dev_ratings = sd(rating)
+  ) %&gt;% 
+  arrange(desc(mean_ratings))
+
+ggplot(movies_rank4, aes(x = mean_ratings))+
+  geom_histogram(color = &quot;black&quot;, fill = &quot;blue&quot;)+
+  labs(
+    title = &quot;Distribution&quot;,
+    x = &quot;Avg Rating&quot;,
+    y = &quot;Freq&quot;
+  )</code></pre>
+<p><img src="/blogs/blog7_files/figure-html/unnamed-chunk-4-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="use-ggplot-to-answer-the-following" class="section level2">
+<h2>Use <code>ggplot</code> to answer the following</h2>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>cast_facebook_likes</code>. Produce a scatterplot and write one sentence discussing whether the number of facebook likes that the cast has received is likely to be a good predictor of how much money a movie will make at the box office. What variable are you going to map to the Y- and X- axes?</li>
+</ul>
+<pre class="r"><code>likes_plot &lt;- movies %&gt;% 
+  select(gross, cast_facebook_likes)
+
+ggplot(likes_plot, aes(x = cast_facebook_likes, y = gross))+
+    geom_point()+
+    labs(title = &quot;Relation between Gross Sales and FB likes&quot;,x = &quot;Facebook Likes&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog7_files/figure-html/gross_on_fblikes-1.png" width="648" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>budget</code>. Produce a scatterplot and write one sentence discussing whether budget is likely to be a good predictor of how much money a movie will make at the box office.</li>
+</ul>
+<pre class="r"><code>budget_plot &lt;- movies %&gt;% 
+  select(gross, budget)
+
+ggplot(budget_plot, aes(x = budget, y = gross))+
+    geom_point()+
+    labs(title = &quot;Relation between Budget and Gross&quot;,x = &quot;Budget&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog7_files/figure-html/gross_on_budget-1.png" width="648" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>rating</code>. Produce a scatterplot, faceted by <code>genre</code> and discuss whether IMDB ratings are likely to be a good predictor of how much money a movie will make at the box office. Is there anything strange in this dataset?</li>
+</ul>
+<pre class="r"><code>rating_plot &lt;- movies %&gt;% 
+  select(gross, rating, genre)
+
+ggplot(movies, aes(x = rating, y = gross))+
+    geom_point()+
+    facet_wrap(vars(genre))+
+    labs(title = &quot;Relation between Gross Sales and rating&quot;,x = &quot;Rating&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog7_files/figure-html/gross_on_rating-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+</div>
