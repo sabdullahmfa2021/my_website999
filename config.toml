@@ -203,7 +203,7 @@ disqusShortname = ""
     
     [[params.footer.social]]
       icon = "fa-github"
-      url= "https://github.com/sabdullahmfa2021"
+      url= "https://github.com/sabdullahmfa2021/"
       label = "GitHub"
 
     [[params.footer.social]]
