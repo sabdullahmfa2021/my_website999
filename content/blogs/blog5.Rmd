@@ -1,15 +1,15 @@
 
 ---
-categories:
-- ""
-- ""
-date: "2020-10-20"
-description: "Where do people drink the most beer, wine and spirits?"
-draft: false
+title: "Alcohol Consuming Analysis"
+date: '2020-10-20'
+description: Where do people drink the most beer, wine and spirits?
+draft: no
 image: pic04.jpg
-keywords: ""
+keywords: ''
 slug: blog5
-title: Alcohol Consuming Analysis
+categories:
+- ''
+- ''
 ---
 
 

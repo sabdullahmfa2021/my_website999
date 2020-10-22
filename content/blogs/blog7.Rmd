@@ -1,15 +1,15 @@
 
 ---
-categories:
-- ""
-- ""
-date: "2020-10-20"
-description: "Merger arbitrage hedge fund strategies"
-draft: false
+title: "M&A Transactions"
+date: '2020-10-20'
+description: Merger arbitrage hedge fund strategies
+draft: no
 image: IMDB01.jpg
-keywords: ""
+keywords: ''
 slug: blog7
-title: M&A Transactions
+categories:
+- ''
+- ''
 ---
 
 
