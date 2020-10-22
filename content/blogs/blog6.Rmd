@@ -80,8 +80,6 @@ movie_rank1 <- movies %>%
   
 # table can be found in data section on RHS within global environment!
   
-  
-  
 ```
 - Produce a table with the average gross earning and budget (`gross` and `budget`) by genre. Calculate a variable `return_on_budget` which shows how many $ did a movie make at the box office for each $ of its budget. Ranked genres by this `return_on_budget` in descending order
 ```{r}

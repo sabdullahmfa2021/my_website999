@@ -139,11 +139,7 @@ disqusShortname = ""
   [params.two]
     enable = true
     title = "My portfolio website"
-    subtitle = """Thank you for visiting. 
-    Mauris aliquet magna magna sed nunc rhoncus pharetra. 
-    Pellentesque condimentum sem. In efficitur ligula tate urna. Maecenas laoreet massa vel lacinia pellentesque lorem ipsum dolor. 
-    Nullam et orci eu lorem consequat tincidunt. Vivamus et sagittis libero.
-    Mauris aliquet magna magna sed nunc rhoncus amet pharetra et feugiat tempus."""
+    subtitle = """Thank you for visiting.""
     buttonText = "Get Started"
     url = "blogs"
 
@@ -207,12 +203,12 @@ disqusShortname = ""
     
     [[params.footer.social]]
       icon = "fa-github"
-      url= "https://www.github.com"
+      url= "https://github.com/sabdullahmfa2021"
       label = "GitHub"
 
     [[params.footer.social]]
       icon = "fa-linkedin"
-      url= "https://www.linkedin.com"
+      url= "https://www.linkedin.com/in/salman-abdullah-95563b139/"
       label = "LinkedIn"
 
     [[params.footer.quicklinks]]
