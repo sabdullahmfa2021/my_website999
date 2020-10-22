@@ -4,12 +4,12 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "Where do people drink the most beer, wine and spirits?"
+description: "How do directors fair against their ratings?"
 draft: false
 image: pic04.jpg
 keywords: ""
 slug: blog6
-title: Alcohol Consuming Analysis
+title: IMDB Ratings
 ---
 
 
@@ -53,7 +53,7 @@ library(lubridate) #to handle dates
 We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movie dataset](https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset)
 
   
-```{r,load_movies, warning=FALSE, message=FALSE, eval=FALSE}
+```{r,load_movies, warning=FALSE, message=FALSE, eval=TRUE}
 
 movies <- read_csv("movies.csv")
 glimpse(movies)
@@ -70,11 +70,6 @@ Besides the obvious variables of `title`, `genre`, `director`, `year`, and `dura
 - `rating`: IMDB average rating 
 
 ## Use your data import, inspection, and cleaning skills to answer the following:
-
-- Are there any missing values (NAs)? Are all entries distinct or are there duplicate entries?
-```{r}
-skim(movies)
-```
 
 - Produce a table with the count of movies by genre, ranked in descending order
 ```{r}

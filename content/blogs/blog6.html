@@ -3,230 +3,131 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "Where do people drink the most beer, wine and spirits?"
+description: "How do directors fair against their ratings?"
 draft: false
-image: pic10.jpg
+image: pic04.jpg
 keywords: ""
-slug: blog5
-title: Alcohol Consuming Analysis
+slug: blog6
+title: IMDB Ratings
 ---
 
 
 
-<div id="where-do-people-drink-the-most-beer-wine-and-spirits" class="section level1">
-<h1>Where Do People Drink The Most Beer, Wine And Spirits?</h1>
-<p>Back in 2014, <a href="https://fivethirtyeight.com/features/dear-mona-followup-where-do-people-drink-the-most-beer-wine-and-spirits/">fivethiryeight.com</a> published an article on alchohol consumption in different countries. The data <code>drinks</code> is available as part of the <code>fivethirtyeight</code> package. Make sure you have installed the <code>fivethirtyeight</code> package before proceeding.</p>
-<pre class="r"><code>library(fivethirtyeight)
-data(drinks)
-view(drinks)
-
-# or download directly
-# alcohol_direct &lt;- read_csv(&quot;https://raw.githubusercontent.com/fivethirtyeight/data/master/alcohol-consumption/drinks.csv&quot;)</code></pre>
-<p>What are the variable types? Any missing values we should worry about?</p>
-<pre class="r"><code>  # glimpse() is part of the dplyr package
-  # gives the first entries of each variable in a row, with data type within &lt;&gt;
-  # int / dbl --&gt; &quot;integer&quot; and &quot;double&quot;
-glimpse(drinks)</code></pre>
-<pre><code>## Rows: 193
-## Columns: 5
-## $ country                      &lt;chr&gt; &quot;Afghanistan&quot;, &quot;Albania&quot;, &quot;Algeria&quot;, &quot;An…
-## $ beer_servings                &lt;int&gt; 0, 89, 25, 245, 217, 102, 193, 21, 261, …
-## $ spirit_servings              &lt;int&gt; 0, 132, 0, 138, 57, 128, 25, 179, 72, 75…
-## $ wine_servings                &lt;int&gt; 0, 54, 14, 312, 45, 45, 221, 11, 212, 19…
-## $ total_litres_of_pure_alcohol &lt;dbl&gt; 0.0, 4.9, 0.7, 12.4, 5.9, 4.9, 8.3, 3.8,…</code></pre>
-<pre class="r"><code>  # skim() is part of the skimr package
-  # computes common summary univariate statistics
-skim(drinks)</code></pre>
-<table>
-<caption>(#tab:glimpse_skim_data)Data summary</caption>
-<tbody>
-<tr class="odd">
-<td align="left">Name</td>
-<td align="left">drinks</td>
-</tr>
-<tr class="even">
-<td align="left">Number of rows</td>
-<td align="left">193</td>
-</tr>
-<tr class="odd">
-<td align="left">Number of columns</td>
-<td align="left">5</td>
-</tr>
-<tr class="even">
-<td align="left">_______________________</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Column type frequency:</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">character</td>
-<td align="left">1</td>
-</tr>
-<tr class="odd">
-<td align="left">numeric</td>
-<td align="left">4</td>
-</tr>
-<tr class="even">
-<td align="left">________________________</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Group variables</td>
-<td align="left">None</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Variable type: character</strong></p>
-<table>
-<thead>
-<tr class="header">
-<th align="left">skim_variable</th>
-<th align="right">n_missing</th>
-<th align="right">complete_rate</th>
-<th align="right">min</th>
-<th align="right">max</th>
-<th align="right">empty</th>
-<th align="right">n_unique</th>
-<th align="right">whitespace</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">country</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">3</td>
-<td align="right">28</td>
-<td align="right">0</td>
-<td align="right">193</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Variable type: numeric</strong></p>
-<table>
-<thead>
-<tr class="header">
-<th align="left">skim_variable</th>
-<th align="right">n_missing</th>
-<th align="right">complete_rate</th>
-<th align="right">mean</th>
-<th align="right">sd</th>
-<th align="right">p0</th>
-<th align="right">p25</th>
-<th align="right">p50</th>
-<th align="right">p75</th>
-<th align="right">p100</th>
-<th align="left">hist</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">beer_servings</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">106.16</td>
-<td align="right">101.14</td>
-<td align="right">0</td>
-<td align="right">20.0</td>
-<td align="right">76.0</td>
-<td align="right">188.0</td>
-<td align="right">376.0</td>
-<td align="left">▇▃▂▂▁</td>
-</tr>
-<tr class="even">
-<td align="left">spirit_servings</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">80.99</td>
-<td align="right">88.28</td>
-<td align="right">0</td>
-<td align="right">4.0</td>
-<td align="right">56.0</td>
-<td align="right">128.0</td>
-<td align="right">438.0</td>
-<td align="left">▇▃▂▁▁</td>
-</tr>
-<tr class="odd">
-<td align="left">wine_servings</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">49.45</td>
-<td align="right">79.70</td>
-<td align="right">0</td>
-<td align="right">1.0</td>
-<td align="right">8.0</td>
-<td align="right">59.0</td>
-<td align="right">370.0</td>
-<td align="left">▇▁▁▁▁</td>
-</tr>
-<tr class="even">
-<td align="left">total_litres_of_pure_alcohol</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">4.72</td>
-<td align="right">3.77</td>
-<td align="right">0</td>
-<td align="right">1.3</td>
-<td align="right">4.2</td>
-<td align="right">7.2</td>
-<td align="right">14.4</td>
-<td align="left">▇▃▅▃▁</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code> ## The variable types are therefore, CHARACTER and NUMERIC (int / dbl)</code></pre>
-<p>Make a plot that shows the top 25 beer consuming countries</p>
-<pre class="r"><code># this creates a new data frame &quot;beer_plot&quot; and assigns to it the &quot;beer_servings&quot; column in descending order, and picks the top 25
-beer_plot &lt;- drinks %&gt;% # use shift + cmd + M
-  arrange(desc(beer_servings)) %&gt;% 
-  select(country, beer_servings) %&gt;% 
-  head(25) 
-
-ggplot(beer_plot, aes(x= beer_servings, y = reorder(country, beer_servings))) +
+<div id="analysis-of-movies--imdb-dataset" class="section level1">
+<h1>Analysis of movies- IMDB dataset</h1>
+<p>We will look at a subset sample of movies, taken from the <a href="https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset">Kaggle IMDB 5000 movie dataset</a></p>
+<pre class="r"><code>movies &lt;- read_csv(&quot;movies.csv&quot;)
+glimpse(movies)</code></pre>
+<pre><code>## Rows: 2,961
+## Columns: 11
+## $ title               &lt;chr&gt; &quot;Avatar&quot;, &quot;Titanic&quot;, &quot;Jurassic World&quot;, &quot;The Aveng…
+## $ genre               &lt;chr&gt; &quot;Action&quot;, &quot;Drama&quot;, &quot;Action&quot;, &quot;Action&quot;, &quot;Action&quot;, …
+## $ director            &lt;chr&gt; &quot;James Cameron&quot;, &quot;James Cameron&quot;, &quot;Colin Trevorro…
+## $ year                &lt;dbl&gt; 2009, 1997, 2015, 2012, 2008, 1999, 1977, 2015, 2…
+## $ duration            &lt;dbl&gt; 178, 194, 124, 173, 152, 136, 125, 141, 164, 93, …
+## $ gross               &lt;dbl&gt; 7.61e+08, 6.59e+08, 6.52e+08, 6.23e+08, 5.33e+08,…
+## $ budget              &lt;dbl&gt; 2.37e+08, 2.00e+08, 1.50e+08, 2.20e+08, 1.85e+08,…
+## $ cast_facebook_likes &lt;dbl&gt; 4834, 45223, 8458, 87697, 57802, 37723, 13485, 92…
+## $ votes               &lt;dbl&gt; 886204, 793059, 418214, 995415, 1676169, 534658, …
+## $ reviews             &lt;dbl&gt; 3777, 2843, 1934, 2425, 5312, 3917, 1752, 1752, 3…
+## $ rating              &lt;dbl&gt; 7.9, 7.7, 7.0, 8.1, 9.0, 6.5, 8.7, 7.5, 8.5, 7.2,…</code></pre>
+<p>Besides the obvious variables of <code>title</code>, <code>genre</code>, <code>director</code>, <code>year</code>, and <code>duration</code>, the rest of the variables are as follows:</p>
+<ul>
+<li><code>gross</code> : The gross earnings in the US box office, not adjusted for inflation</li>
+<li><code>budget</code>: The movie’s budget</li>
+<li><code>cast_facebook_likes</code>: the number of facebook likes cast memebrs received</li>
+<li><code>votes</code>: the number of people who voted for (or rated) the movie in IMDB</li>
+<li><code>reviews</code>: the number of reviews for that movie</li>
+<li><code>rating</code>: IMDB average rating</li>
+</ul>
+<div id="use-your-data-import-inspection-and-cleaning-skills-to-answer-the-following" class="section level2">
+<h2>Use your data import, inspection, and cleaning skills to answer the following:</h2>
+<ul>
+<li>Produce a table with the count of movies by genre, ranked in descending order</li>
+</ul>
+<pre class="r"><code>movie_rank1 &lt;- movies %&gt;%
+  count(genre) %&gt;% 
+  rename(number_of_movies = n) %&gt;% 
+  arrange(desc(number_of_movies))
   
-  geom_col()+ #geom_col generates a barplot
-  labs( #sets the labels for x and y axis
-    title = &quot;Top 25 beer consuming countries&quot;,
-    x = &quot;Servings&quot;,
-    y = &quot;Countries&quot;
-  )</code></pre>
-<p><img src="/blogs/IMDBcode_files/figure-html/beer_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
-<p>Make a plot that shows the top 25 wine consuming countries</p>
-<pre class="r"><code>wine_plot &lt;- drinks %&gt;% 
-  arrange(desc(wine_servings)) %&gt;% 
-  select(country, wine_servings) %&gt;% 
-  head(25)
+# table can be found in data section on RHS within global environment!</code></pre>
+<ul>
+<li>Produce a table with the average gross earning and budget (<code>gross</code> and <code>budget</code>) by genre. Calculate a variable <code>return_on_budget</code> which shows how many $ did a movie make at the box office for each $ of its budget. Ranked genres by this <code>return_on_budget</code> in descending order</li>
+</ul>
+<pre class="r"><code>movie_rank2 &lt;- movies %&gt;% 
+  group_by(genre) %&gt;%
+  summarise(
+      sum_gross = sum(gross),
+      sum_budget = sum(budget)
+      ) %&gt;% 
+  mutate(return_on_budget = sum_gross / sum_budget) %&gt;% 
+  arrange(desc(return_on_budget))</code></pre>
+<ul>
+<li>Produce a table that shows the top 15 directors who have created the highest gross revenue in the box office. Don’t just show the total gross amount, but also the mean, median, and standard deviation per director.</li>
+</ul>
+<pre class="r"><code>movies_rank3 &lt;- movies %&gt;% 
+  group_by(director) %&gt;% 
+#summarise will create new variables for summary statistics
+  summarise(sum_gross_director = sum(gross), 
+      mean_director = mean(gross),
+      median_director = median(gross),
+      std_director = sd(gross)) %&gt;% 
+  arrange(desc(sum_gross_director)) %&gt;% 
+  head(15)</code></pre>
+<ul>
+<li>Finally, ratings. Produce a table that describes how ratings are distributed by genre. We don’t want just the mean, but also, min, max, median, SD and some kind of a histogram or density graph that visually shows how ratings are distributed.</li>
+</ul>
+<pre class="r"><code>movies_rank4 &lt;- movies %&gt;% 
+  group_by(genre) %&gt;% 
+  summarise(mean_ratings = mean(rating),
+            min_ratings = min(rating),
+            max_ratings = max(rating),
+            median_ratings = median(rating),
+            std_dev_ratings = sd(rating)
+  ) %&gt;% 
+  arrange(desc(mean_ratings))
 
-ggplot(wine_plot, aes(x = wine_servings, y= reorder(country, wine_servings)))+
-  
-  geom_col()+
+ggplot(movies_rank4, aes(x = mean_ratings))+
+  geom_histogram(color = &quot;black&quot;, fill = &quot;blue&quot;)+
   labs(
-    title = &quot;Top 25 wine consuming countries&quot;,
-    x = &quot;Number of Servings&quot;,
-    y = &quot;Countries&quot;
+    title = &quot;Distribution&quot;,
+    x = &quot;Avg Rating&quot;,
+    y = &quot;Freq&quot;
   )</code></pre>
-<p><img src="/blogs/IMDBcode_files/figure-html/wine_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
-<pre class="r"><code># see above</code></pre>
-<p>Finally, make a plot that shows the top 25 spirit consuming countries</p>
-<pre class="r"><code>spirit_plot &lt;- drinks %&gt;% 
-  arrange(desc(spirit_servings)) %&gt;% 
-  select(country, spirit_servings) %&gt;% 
-  head(25)
+<p><img src="/blogs/blog6_files/figure-html/unnamed-chunk-4-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="use-ggplot-to-answer-the-following" class="section level2">
+<h2>Use <code>ggplot</code> to answer the following</h2>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>cast_facebook_likes</code>. Produce a scatterplot and write one sentence discussing whether the number of facebook likes that the cast has received is likely to be a good predictor of how much money a movie will make at the box office. What variable are you going to map to the Y- and X- axes?</li>
+</ul>
+<pre class="r"><code>likes_plot &lt;- movies %&gt;% 
+  select(gross, cast_facebook_likes)
 
-ggplot(spirit_plot, aes(x = spirit_servings, y = reorder(country, spirit_servings)))+
-  geom_col()+
-  labs(
-    title = &quot;Top 25 Spirit Consuming Countries&quot;,
-    x = &quot;Number of Servings&quot;,
-    y = &quot;Countries&quot;
-  )</code></pre>
-<p><img src="/blogs/IMDBcode_files/figure-html/spirit_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>#see above</code></pre>
-<p>What can you infer from these plots? Don’t just explain what’s in the graph, but speculate or tell a short story (1-2 paragraphs max).</p>
-<blockquote>
-<p>TYPE YOUR ANSWER AFTER (AND OUTSIDE!) THIS BLOCKQUOTE.</p>
-</blockquote>
+ggplot(likes_plot, aes(x = cast_facebook_likes, y = gross))+
+    geom_point()+
+    labs(title = &quot;Relation between Gross Sales and FB likes&quot;,x = &quot;Facebook Likes&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/gross_on_fblikes-1.png" width="648" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>budget</code>. Produce a scatterplot and write one sentence discussing whether budget is likely to be a good predictor of how much money a movie will make at the box office.</li>
+</ul>
+<pre class="r"><code>budget_plot &lt;- movies %&gt;% 
+  select(gross, budget)
+
+ggplot(budget_plot, aes(x = budget, y = gross))+
+    geom_point()+
+    labs(title = &quot;Relation between Budget and Gross&quot;,x = &quot;Budget&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/gross_on_budget-1.png" width="648" style="display: block; margin: auto;" /></p>
+<ul>
+<li>Examine the relationship between <code>gross</code> and <code>rating</code>. Produce a scatterplot, faceted by <code>genre</code> and discuss whether IMDB ratings are likely to be a good predictor of how much money a movie will make at the box office. Is there anything strange in this dataset?</li>
+</ul>
+<pre class="r"><code>rating_plot &lt;- movies %&gt;% 
+  select(gross, rating, genre)
+
+ggplot(movies, aes(x = rating, y = gross))+
+    geom_point()+
+    facet_wrap(vars(genre))+
+    labs(title = &quot;Relation between Gross Sales and rating&quot;,x = &quot;Rating&quot;, y = &quot;Gross&quot;)</code></pre>
+<p><img src="/blogs/blog6_files/figure-html/gross_on_rating-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
 </div>
