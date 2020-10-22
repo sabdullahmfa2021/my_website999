@@ -4,12 +4,12 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "Ratings and directors"
+description: "Where do people drink the most beer, wine and spirits?"
 draft: false
-image: IMDB.jpg
+image: pic04.jpg
 keywords: ""
 slug: blog6
-title: IMDB Ratings
+title: Alcohol Consuming Analysis
 ---
 
 
