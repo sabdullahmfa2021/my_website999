@@ -111,7 +111,7 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "US Election Data"
-      subtitle = "Trump vs. Clinton in the 2016 Presidential Election"
+      subtitle = ""
       image = "trump.jpg"
       url = "blogs/blog1"
 
