@@ -139,7 +139,7 @@ disqusShortname = ""
   [params.two]
     enable = true
     title = "My portfolio website"
-    subtitle = """Thank you for visiting.""
+    subtitle = "Thank you for visiting."
     buttonText = "Get Started"
     url = "blogs"
 
