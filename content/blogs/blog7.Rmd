@@ -6,30 +6,14 @@ categories:
 date: "2020-10-20"
 description: "An insight into Merger Arbitrage"
 draft: false
-image: pic10.jpg
+image: ""
 keywords: ""
 slug: blog7
-title: Merger Arbirtage
+title: Merger Arbitrage
 ---
 
 
-```{r, setup, echo=FALSE}
-knitr::opts_chunk$set(
-  message = FALSE, 
-  warning = FALSE, 
-  tidy=FALSE,     # display code as typed
-  size="small")   # slightly smaller font for code
-options(digits = 3)
-
-# default figure size
-knitr::opts_chunk$set(
-  fig.width=6.75, 
-  fig.height=6.75,
-  fig.align = "center"
-)
-```
-
-```{r, setup, include=FALSE}
+```{r, setup, include=TRUE}
 knitr::opts_chunk$set(
   message = FALSE, 
   warning = FALSE, 
@@ -49,7 +33,7 @@ options(tz="America/New_York")
 Sys.setenv(TZ="America/New_York")
 ```
 
-```{r load-libraries, include=FALSE}
+```{r load-libraries, include=TRUE}
 library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
 library(mosaic)
 library(ggthemes)
@@ -79,7 +63,7 @@ library(huxtable)
 
 Risk-free Rates
 
-```{r}
+```{r, load_tbill, warning=FALSE, message=FALSE, eval=TRUE}
 tbill <- vroom("https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=DTB3&scale=left&cosd=2009-08-01&coed=2020-10-09&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Daily&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date=2020-10-14&revision_date=2020-10-14&nd=1954-01-04") %>%
   mutate(DTB3 = DTB3/100) %>%
   rename("date" = "DATE",
