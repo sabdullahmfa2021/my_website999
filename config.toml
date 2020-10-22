@@ -52,8 +52,8 @@ disqusShortname = ""
       url = "blogs"
 
     [[params.navigation.links]]
-      name = "Resume"
-      url = "blogs/Abdullah, Salman, LBS Resume.pdf"
+      name = "LinkedIn"
+      url = "https://www.linkedin.com/in/salman-abdullah-95563b139/"
 
     [[params.navigation.links]]
       name = "Elements"
@@ -82,8 +82,8 @@ disqusShortname = ""
     # To change the background image on the homepage banner, replace 'banner.jpg' in
     # the 'static/img' folder.
     title = "Hi, my name is Salman"
-    subtitle = "MY PORTFOLIO WEBSITE FOR DATA ANALYTICS AS PART OF THE MFA 2021 PROGRAMME AT LONDON BUSINESS SCHOOL"
-    buttonText = "CV"
+    subtitle = "MASTER'S IN FINANCIAL ANALYSIS PROGRAMME AT LONDON BUSINESS SCHOOL, SEE "MENU" FOR MY RÈSUMÈ"
+    buttonText = "My Projects"
 
 
   # Tiles Section
