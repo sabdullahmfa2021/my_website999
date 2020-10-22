@@ -4,12 +4,12 @@ categories:
 - ""
 - ""
 date: "2020-10-20"
-description: "An insight into Merger Arbitrage"
+description: "How do directors fair against their ratings?"
 draft: false
-image: ""
+image: IMDB01.jpg
 keywords: ""
-slug: blog7
-title: Merger Arbitrage
+slug: blog6
+title: "IMDB Ratings"
 ---
 
 
